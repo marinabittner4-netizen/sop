@@ -1,0 +1,37 @@
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --text:#111;
+  --muted:#5b5b66;
+  --border:#e8e8ef;
+  --primary:#1f5eff;
+  --danger:#d61f69;
+}
+*{box-sizing:border-box}
+html,body{padding:0;margin:0}
+body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text)}
+a{color:inherit}
+.container{max-width:1100px;margin:0 auto;padding:16px}
+.header{position:sticky;top:0;z-index:10;background:var(--card);border-bottom:1px solid var(--border)}
+.headerInner{max-width:1100px;margin:0 auto;padding:16px}
+.h1{margin:0;font-size:18px}
+.sub{margin:4px 0 0;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(20,20,30,.04)}
+.grid{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:1px solid var(--border);background:#fff;padding:10px 12px;font-weight:600;cursor:pointer}
+.btnPrimary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btnDanger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.badge{display:inline-flex;align-items:center;border:1px solid var(--border);padding:4px 8px;border-radius:999px;font-size:12px;color:var(--muted);background:#fff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.input,select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#fff;font-size:14px}
+.label{font-size:12px;color:var(--muted);margin:0 0 6px}
+.hr{height:1px;background:var(--border);margin:12px 0}
+.stepper{display:flex;gap:8px;flex-wrap:wrap}
+.step{padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#fff;color:var(--muted);font-size:12px}
+.stepActive{border-color:var(--primary);color:var(--primary)}
+.notice{font-size:13px;color:var(--muted);line-height:1.4}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left;font-size:14px}
+.table th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
