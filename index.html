@@ -625,7 +625,7 @@
           <div id="printArea" style="margin-top:12px;">
             <div id="pdfStatus" class="muted" style="margin:0 0 8px;"></div>
             <a id="pdfOpenLink" href="#" target="_blank" rel="noopener" style="display:none; font-size:14px; margin:0 0 10px; display:inline-block;">PDF in neuem Tab öffnen</a>
-            <div id="pdfJsViewer" style="width:100%; height:80vh; overflow:auto; border:1px solid var(--line); border-radius:12px; background:#fff; padding:10px;"></div>
+            <iframe id="pdfPreview" title="PDF Vorschau" style="width:100%; height:80vh; border:1px solid var(--line); border-radius:12px; background:#fff;"></iframe>
           </div>
 
           <details style="margin-top:12px;">
@@ -681,13 +681,6 @@
 </footer>
 
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-<script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script>
-  // PDF.js Worker
-  if(window.pdfjsLib){
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  }
-</script>
 <script>
   // Kleine Inline-Icons (damit die ZIP ohne weitere Bilddateien funktioniert)
   const ICON = (label) =>
@@ -1567,13 +1560,13 @@
   let __pdfBusy = false;
 
   function clearPdfPreview(){
-    const viewer = document.getElementById('pdfJsViewer');
+    const iframe = document.getElementById('pdfPreview');
     const status = document.getElementById('pdfStatus');
     const btnOpen = document.getElementById('btnOpenPdf');
     const openLink = document.getElementById('pdfOpenLink');
 
     if(status) status.textContent = '';
-    if(viewer) viewer.innerHTML = ''; 
+    if(iframe) iframe.src = 'about:blank';
     if(btnOpen) btnOpen.disabled = true;
     if(openLink) openLink.style.display = 'none';
 
@@ -1605,24 +1598,36 @@
     for(let i=0;i<d.length;i++){
       page.drawText(d[i], { x: startX + i*(boxW+gap), y, size });
     }
-
-// Zeichnet Ziffern exakt in die 3 Kästchen der PG54-Mengen-Spalte (Kostenübernahme, Seite 1)
-// value: Zahl/String (z.B. "5" oder "10"), wird auf max. 3 Ziffern begrenzt
-function drawPg54Boxes(page, value, xCenters, y, opts={}){
-  const v = String(value ?? '').replace(/\D/g,'').slice(0, 3);
-  if(!v) return;
-  const size = opts.size ?? 11;
-  // kleine Offsets für optische Zentrierung
-  const dx = opts.dx ?? -3.2;
-  const dy = opts.dy ?? -4.2;
-  for(let i=0;i<Math.min(v.length, xCenters.length);i++){
-    page.drawText(v[i], { x: xCenters[i] + dx, y: y + dy, size });
   }
+
+  
+async function blobToBase64(blob){
+  const ab = await blob.arrayBuffer();
+  const bytes = new Uint8Array(ab);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for(let i=0;i<bytes.length;i+=chunkSize){
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunkSize));
+  }
+  return btoa(binary);
 }
 
+async function finalizeOnServer(originalBlob, filename){
+  const pdfBase64 = await blobToBase64(originalBlob);
+  const resp = await fetch('/api/finalize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pdfBase64, filename })
+  });
+  if(!resp.ok){
+    const t = await resp.text();
+    throw new Error('Finalize-API Fehler: ' + t);
   }
+  const outBuf = await resp.arrayBuffer();
+  return new Blob([outBuf], { type: 'application/pdf' });
+}
 
-  async function generateFilledPdf(payload){
+async function generateFilledPdf(payload){
     // pdf-lib kommt über CDN
     const { PDFDocument, StandardFonts } = window.PDFLib || {};
     if(!PDFDocument) throw new Error('PDFLib nicht verfügbar (CDN nicht geladen).');
@@ -1669,49 +1674,6 @@ function drawPg54Boxes(page, value, xCenters, y, opts={}){
     // PG54 Häkchen (kleines X in das Kästchen links)
     kPage.drawText('X', { x: 58, y: 668, size: 12 });
 
-
-// ===== PG54 Mengen/Faktor in die Kästchen schreiben (Seite 1) =====
-// Mapping: PDF-Zeile 1..12 entspricht der festen Reihenfolge im Formular
-const pg54Order = [
-  "pads",
-  "fingerlings",
-  "gloves",
-  "medMasks",
-  "ffp2",
-  "aprons",
-  "apronsReusable",
-  "serviettes",
-  "handdes",
-  "surfacedes",
-  "hand_wipes",
-  "surface_wipes",
-];
-const items = Array.isArray(payload?.items) ? payload.items : [];
-const qtyMap = Object.fromEntries(items.map(it => [it.id, Number(it.qty || 0)]));
-const metaMap = Object.fromEntries(items.map(it => [it.id, String(it.meta || "")]));
-
-// X-Positionen (Zentren) der 3 Kästchen-Spalten in PDF-Punkten (pdf-lib Koordinaten)
-const PG54_X = [429.75, 445.25, 461.0];
-// Y-Positionen (Zentren) je Zeile 1..12 (von oben nach unten)
-const PG54_Y = [546.75, 512.5, 477.5, 450.0, 425.0, 398.0, 371.5, 345.0, 318.5, 292.5, 266.0, 249.25];
-
-for(let i=0;i<pg54Order.length;i++){
-  const id = pg54Order[i];
-  let val = qtyMap[id] || 0;
-
-  // Desinfektionsmittel: Faktor = Anzahl * (ml/100) gerundet (Formularlogik)
-  if(id === "handdes" || id === "surfacedes"){
-    const ml = parseMl(metaMap[id] || "");
-    const factor = factorForMl(ml || 500);
-    val = val ? (val * factor) : 0;
-  }
-
-  // Nur schreiben, wenn etwas gewählt wurde
-  if(val > 0){
-    drawPg54Boxes(kPage, String(val), PG54_X, PG54_Y[i], { size: 11 });
-  }
-}
-
     // Datum unten links (TTMMJJJJ)
     const today = new Date();
     const dd = String(today.getDate()).padStart(2,'0');
@@ -1752,38 +1714,6 @@ for(let i=0;i<pg54Order.length;i++){
     return new Blob([pdfBytes], { type: 'application/pdf' });
   }
 
-
-  async function renderPdfJs(blob){
-    const viewer = document.getElementById('pdfJsViewer');
-    if(!viewer || !window.pdfjsLib) return;
-
-    viewer.innerHTML = '';
-    const ab = await blob.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-
-    for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
-      const page = await pdf.getPage(pageNum);
-      const viewport1 = page.getViewport({ scale: 1 });
-      const maxWidth = Math.max(320, viewer.clientWidth - 24);
-      const scale = maxWidth / viewport1.width;
-      const viewport = page.getViewport({ scale });
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d', { alpha: false });
-      canvas.width = Math.floor(viewport.width);
-      canvas.height = Math.floor(viewport.height);
-      canvas.style.width = '100%';
-      canvas.style.height = 'auto';
-      canvas.style.display = 'block';
-      canvas.style.margin = '0 0 12px';
-      canvas.style.border = '1px solid #eef0f6';
-      canvas.style.borderRadius = '10px';
-
-      viewer.appendChild(canvas);
-      await page.render({ canvasContext: ctx, viewport }).promise;
-    }
-  }
-
   async function renderFilledPdfPreview(payload){
     if(__pdfBusy) return;
     __pdfBusy = true;
@@ -1795,26 +1725,26 @@ for(let i=0;i<pg54Order.length;i++){
       if(status) status.textContent = 'PDF wird erzeugt …';
       clearPdfPreview();
 
-      const blob = await generateFilledPdf(payload);
-      const url = URL.createObjectURL(blob);
-      __pdfPreviewUrl = url;
+      
+const rawBlob = await generateFilledPdf(payload);
 
-      // 1) Immer in neuem Tab öffnen (Android/iOS stabil)
-      try{ window.open(url, '_blank'); }catch(e){}
+// Server-Finalisierung: Read-only + Flatten (Vercel Function)
+const safeName = (payload?.customer?.nachname || 'Kunde').replace(/[^a-zA-Z0-9_-]/g,'_');
+const safeVor = (payload?.customer?.vorname || '').replace(/[^a-zA-Z0-9_-]/g,'_');
+const fileName = `Pflegebox_${safeName}${safeVor?('_'+safeVor):''}_FINAL.pdf`;
 
-      // 2) Button + Link aktivieren (für später erneut öffnen)
-      if(btnOpen){
-        btnOpen.disabled = false;
-        btnOpen.onclick = () => {
-          if(__pdfPreviewUrl) window.open(__pdfPreviewUrl, '_blank');
-        };
-      }
-      if(openLink){
-        openLink.style.display = 'inline-block';
-        openLink.href = url;
-      }
-      // 3) PDF.js Vorschau (funktioniert auch auf iPhone/iPad)
-      await renderPdfJs(blob);
+const blob = await finalizeOnServer(rawBlob, fileName);
+
+const url = URL.createObjectURL(blob);
+__pdfPreviewUrl = url;
+
+// 1) In neuem Tab öffnen
+try{ window.open(url, '_blank'); }catch(e){}
+
+// 2) Button + Link aktivieren (für später erneut öffnen)
+// 3) Optional: iframe als Fallback (wenn Browser es kann)
+      const iframe = document.getElementById('pdfPreview');
+      if(iframe) iframe.src = url;
 
       if(status) status.textContent = 'PDF wurde erstellt. Öffne sie im neuen Tab (Button „PDF öffnen“).';
     }catch(err){
