@@ -5,18 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Marina Pflegebox Konfigurator – 4 Schritte</title>
   <style>
-    :root { --max: 42; --brand:#4f46e5; --ink:#111; --muted:#667085; --line:#e8e8ef; --bg:#f6f7fb; }
+    /* ===== Brand (angepasst an pb-marina.de) ===== */
+    :root {
+      --max: 42;
+      --brand:#e53935;        /* Marina-Rot */
+      --brandDark:#c62828;    /* Hover/Active */
+      --ink:#111;
+      --muted:#667085;
+      --line:#e8e8ef;
+      --bg:#f5f5f7;           /* leicht hellgrau wie Website */
+    }
     * { box-sizing:border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:var(--bg); color:var(--ink); }
-    header { padding: 18px 0 14px; background:#fff; border-bottom:1px solid var(--line); position: sticky; top:0; z-index: 5; }
+    header { background:#fff; border-bottom:1px solid var(--line); position: sticky; top:0; z-index: 5; }
+    .topbar{ height:44px; background:var(--brand); display:flex; align-items:center; }
+    .topbar .wrap{ display:flex; justify-content:center; gap:18px; }
+    .topbar a{ width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; border:1px solid rgba(255,255,255,.35); }
+    .topbar svg{ width:16px; height:16px; fill:#fff; }
+    .headInner{ padding: 18px 0 14px; }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
 
-    h1 { margin: 0; font-size: 20px; display:flex; align-items:center; gap:10px; }
-    .brandMark { width:22px; height:22px; display:inline-block; }
-    .sub { margin:6px 0 0; color:#555; font-size: 13px; }
+    h1 { margin: 0; }
+    .brandRow{ display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+    .logoWord{
+      font-family: "Brush Script MT","Segoe Script","Snell Roundhand",cursive;
+      font-size: 44px;
+      line-height: .9;
+      color: var(--brand);
+      letter-spacing: .2px;
+      font-weight: 500;
+      display:flex;
+      align-items:flex-end;
+      gap:8px;
+    }
+    .logoHeart{ width:18px; height:18px; margin-bottom:6px; }
+    .logoHeart path{ fill: var(--brand); }
+    .logoSub{ font-weight:900; letter-spacing:.7px; font-size:12px; color:#111; margin-top:2px; }
+    .sub { margin:8px 0 0; color:#555; font-size: 13px; }
 
     .topline { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap: wrap; }
-    .pill { padding: 6px 10px; border-radius: 999px; font-size: 12px; border:1px solid var(--line); background:#fafbff; }
+    .pill { padding: 6px 10px; border-radius: 999px; font-size: 12px; border:1px solid var(--line); background:#fff; }
     .pill strong { font-variant-numeric: tabular-nums; }
 
     /* Stepper */
@@ -26,14 +54,14 @@
       border-radius: 999px; background:#fff; color:#475467; font-size: 12px;
     }
     .stepDot b { display:inline-flex; width:22px; height:22px; align-items:center; justify-content:center; border-radius:999px; border:1px solid var(--line); font-size:12px; }
-    .stepDot.active { border-color:#d9d9ff; background:#f4f4ff; color:#1d2939; }
-    .stepDot.active b { border-color:#c7d2fe; background:#eef2ff; }
+    .stepDot.active { border-color: rgba(229,57,53,.28); background: rgba(229,57,53,.06); color:#1d2939; }
+    .stepDot.active b { border-color: rgba(229,57,53,.35); background: rgba(229,57,53,.12); }
     .stepDot.done { border-color:#d1fadf; background:#ecfdf3; color:#027a48; }
     .stepDot.done b { border-color:#abefc6; background:#d1fadf; }
 
     /* Layout */
     main { padding: 16px 0 22px; }
-    .card { background:#fff; border:1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.03); }
+    .card { background:#fff; border:1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: 0 6px 22px rgba(0,0,0,.05); }
     .card h2 { margin:0 0 10px; font-size: 16px; }
 
     .grid { display:grid; grid-template-columns: 1fr 0.7fr; gap:16px; }
@@ -51,14 +79,14 @@
     /* Gloves sizes */
     .sizes { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
     .sizeBtn { padding:6px 8px; font-size:12px; border-radius: 999px; }
-    .sizeBtn.active { background: #eef0ff; border-color: var(--brand); color: #111; }
+    .sizeBtn.active { background: #fff0f0; border-color: var(--brand); color: #111; }
     .sizeBtn:disabled { opacity:.45; cursor:not-allowed; }
 
     input[type="number"] { width: 76px; padding: 8px; border:1px solid #d9d9e6; border-radius: 10px; font-size: 14px; }
     button { border:1px solid #d9d9e6; background:#fff; padding:8px 10px; border-radius: 10px; cursor:pointer; }
-    button:hover { background:#f4f4ff; }
+    button:hover { background:#fff5f5; }
     .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
-    .primary:hover { background:#4338ca; }
+    .primary:hover { background:var(--brandDark); }
     .secondary { background:#fff; }
     .danger { background:#fff1f2; border-color:#fecdd3; color:#9f1239; }
     .danger:hover { background:#ffe4e6; }
@@ -76,13 +104,13 @@
     }
 
     /* Budget bar */
-    .barWrap { height: 10px; background:#eef0ff; border-radius: 999px; overflow:hidden; border:1px solid #e3e6ff; }
+    .barWrap { height: 10px; background:#fff0f0; border-radius: 999px; overflow:hidden; border:1px solid rgba(229,57,53,.18); }
     .bar { height: 100%; width: 0%; background: var(--brand); transition: width .2s ease; }
     .warn { color:#b42318; font-size: 12px; margin-top: 8px; display:none; }
     .ok { color:#1a7f37; font-size: 12px; margin-top: 8px; display:none; }
 
     /* Forms */
-    .formCard{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; }
+    .formCard{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow: 0 6px 22px rgba(0,0,0,.04); }
     .formCard h3{ margin:0 0 12px; font-size:20px; }
     .formGrid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
     .formGrid .full{ grid-column: 1 / -1; }
@@ -178,8 +206,8 @@
     .fieldBudget{ display:none !important; }
 
     /* --- Extra-Feld unter Produkten (optional) --- */
-    .extraSection{ margin-top:16px; padding:16px; border-radius:16px; border:1px solid var(--line); background:#f0f7ff; }
-    .extraBanner{ background:#0f766e; color:#fff; border-radius:12px; padding:10px 12px; font-weight:900; text-align:center; }
+    .extraSection{ margin-top:16px; padding:16px; border-radius:16px; border:1px solid rgba(229,57,53,.18); background:#fff7f7; }
+    .extraBanner{ background:var(--brand); color:#fff; border-radius:12px; padding:10px 12px; font-weight:900; text-align:center; }
     .extraBanner b{ font-size:16px; }
     .extraCard{ margin-top:12px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px; display:grid; grid-template-columns: 92px 1fr auto; gap:14px; align-items:center; }
     .extraImg{ width:92px; height:72px; border-radius:14px; background:#f5f6fb; border:1px solid #ececf5; display:flex; align-items:center; justify-content:center; overflow:hidden; }
@@ -189,7 +217,7 @@
     .extraList{ margin:10px 0 0; padding-left:18px; color:#344054; font-size:13px; line-height:1.35; }
     .extraQty{ display:flex; align-items:center; gap:10px; }
     .extraQty .btnMini{ width:40px; height:40px; border-radius:12px; border:1px solid #d9d9e6; background:#fff; font-size:18px; }
-    .extraQty .btnMini:hover{ background:#ecfeff; }
+    .extraQty .btnMini:hover{ background:#fff5f5; }
     .extraQty .count{ min-width:24px; text-align:center; font-weight:900; font-variant-numeric: tabular-nums; }
     .extraNote{ margin-top:10px; color:#475467; font-size:12px; }
     @media (max-width: 640px){
@@ -203,19 +231,40 @@
 <body>
 
 <header>
-  <div class="wrap">
-    <div class="topline">
-      <div>
-        <h1>
-          <svg class="brandMark" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 21s-8-4.6-9.8-10.1C1 7.7 3.2 5 6.2 5c1.7 0 3.2.9 3.8 2.2C10.6 5.9 12.1 5 13.8 5c3 0 5.2 2.7 4 5.9C20 16.4 12 21 12 21z" fill="#e11d48"/>
-          </svg>
-          Marina Pflegebox Konfigurator
-        </h1>
-        <p class="sub">In 4 Schritten zur fertigen Box – Budget wird live geprüft.</p>
-      </div>
-      <div class="pill">Budget wird automatisch geprüft.<span id="budgetShow" style="display:none"></span><span id="sumShow" style="display:none"></span></div>
+  <!-- Topbar wie auf pb-marina.de (nur Optik, keine Pflicht-Links) -->
+  <div class="topbar" aria-hidden="true">
+    <div class="wrap">
+      <a href="#" tabindex="-1" aria-label="Instagram" title="Instagram">
+        <svg viewBox="0 0 24 24"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 4.5A5.5 5.5 0 1 1 6.5 14 5.51 5.51 0 0 1 12 8.5Zm0 2A3.5 3.5 0 1 0 15.5 14 3.5 3.5 0 0 0 12 10.5ZM18 7.2a1 1 0 1 1-1 1 1 1 0 0 1 1-1Z"/></svg>
+      </a>
+      <a href="#" tabindex="-1" aria-label="Facebook" title="Facebook">
+        <svg viewBox="0 0 24 24"><path d="M13.5 22v-8h2.7l.4-3H13.5V9.1c0-.9.3-1.5 1.5-1.5h1.7V5a23 23 0 0 0-2.5-.1C11.7 4.9 10 6.4 10 9v2H7.5v3H10v8h3.5Z"/></svg>
+      </a>
+      <a href="#" tabindex="-1" aria-label="TikTok" title="TikTok">
+        <svg viewBox="0 0 24 24"><path d="M14 3v10.1a3.6 3.6 0 1 1-3-3.5V7.1a6.1 6.1 0 1 0 6.6 6.1V8.6c1.1.8 2.4 1.2 3.9 1.2V6.7c-1.1 0-2.1-.4-2.9-1.1A4.1 4.1 0 0 1 17.3 3H14Z"/></svg>
+      </a>
     </div>
+  </div>
+
+  <div class="headInner">
+    <div class="wrap">
+      <div class="topline">
+        <div>
+          <div class="brandRow">
+            <div class="logoWord">
+              Marina
+              <svg class="brandMark" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 21s-8-4.6-9.8-10.1C1 7.7 3.2 5 6.2 5c1.7 0 3.2.9 3.8 2.2C10.6 5.9 12.1 5 13.8 5c3 0 5.2 2.7 4 5.9C20 16.4 12 21 12 21z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div>
+              <div class="logoSub">PFLEGEBERATUNG &amp; ALLTAGSHILFE</div>
+              <div class="sub">Pflegebox-Konfigurator – in 4 Schritten zur fertigen Box.</div>
+            </div>
+          </div>
+        </div>
+        <div class="pill">Budget wird automatisch geprüft.<span id="budgetShow" style="display:none"></span><span id="sumShow" style="display:none"></span></div>
+      </div>
 
     <div class="stepper" aria-label="Schritte">
       <div class="stepDot active" id="dot1"><b>1</b><span>Produkte</span></div>
@@ -229,6 +278,7 @@
       <div class="warn" id="warn">⚠️ Budget überschritten – reduziere Mengen.</div>
       <div class="warn" id="req">⚠️ Bitte wähle eine Handschuhgröße (S–XL).</div>
       <div class="ok" id="ok">✅ Passt ins Budget.</div>
+    </div>
     </div>
   </div>
 </header>
@@ -575,7 +625,7 @@
           <div id="printArea" style="margin-top:12px;">
             <div id="pdfStatus" class="muted" style="margin:0 0 8px;"></div>
             <a id="pdfOpenLink" href="#" target="_blank" rel="noopener" style="display:none; font-size:14px; margin:0 0 10px; display:inline-block;">PDF in neuem Tab öffnen</a>
-            <iframe id="pdfPreview" title="PDF Vorschau" style="width:100%; height:80vh; border:1px solid var(--line); border-radius:12px; background:#fff;"></iframe>
+            <div id="pdfJsViewer" style="width:100%; height:80vh; overflow:auto; border:1px solid var(--line); border-radius:12px; background:#fff; padding:10px;"></div>
           </div>
 
           <details style="margin-top:12px;">
@@ -631,6 +681,13 @@
 </footer>
 
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+  // PDF.js Worker
+  if(window.pdfjsLib){
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+</script>
 <script>
   // Kleine Inline-Icons (damit die ZIP ohne weitere Bilddateien funktioniert)
   const ICON = (label) =>
@@ -1510,13 +1567,13 @@
   let __pdfBusy = false;
 
   function clearPdfPreview(){
-    const iframe = document.getElementById('pdfPreview');
+    const viewer = document.getElementById('pdfJsViewer');
     const status = document.getElementById('pdfStatus');
     const btnOpen = document.getElementById('btnOpenPdf');
     const openLink = document.getElementById('pdfOpenLink');
 
     if(status) status.textContent = '';
-    if(iframe) iframe.src = 'about:blank';
+    if(viewer) viewer.innerHTML = ''; 
     if(btnOpen) btnOpen.disabled = true;
     if(openLink) openLink.style.display = 'none';
 
@@ -1548,6 +1605,21 @@
     for(let i=0;i<d.length;i++){
       page.drawText(d[i], { x: startX + i*(boxW+gap), y, size });
     }
+
+// Zeichnet Ziffern exakt in die 3 Kästchen der PG54-Mengen-Spalte (Kostenübernahme, Seite 1)
+// value: Zahl/String (z.B. "5" oder "10"), wird auf max. 3 Ziffern begrenzt
+function drawPg54Boxes(page, value, xCenters, y, opts={}){
+  const v = String(value ?? '').replace(/\D/g,'').slice(0, 3);
+  if(!v) return;
+  const size = opts.size ?? 11;
+  // kleine Offsets für optische Zentrierung
+  const dx = opts.dx ?? -3.2;
+  const dy = opts.dy ?? -4.2;
+  for(let i=0;i<Math.min(v.length, xCenters.length);i++){
+    page.drawText(v[i], { x: xCenters[i] + dx, y: y + dy, size });
+  }
+}
+
   }
 
   async function generateFilledPdf(payload){
@@ -1597,6 +1669,49 @@
     // PG54 Häkchen (kleines X in das Kästchen links)
     kPage.drawText('X', { x: 58, y: 668, size: 12 });
 
+
+// ===== PG54 Mengen/Faktor in die Kästchen schreiben (Seite 1) =====
+// Mapping: PDF-Zeile 1..12 entspricht der festen Reihenfolge im Formular
+const pg54Order = [
+  "pads",
+  "fingerlings",
+  "gloves",
+  "medMasks",
+  "ffp2",
+  "aprons",
+  "apronsReusable",
+  "serviettes",
+  "handdes",
+  "surfacedes",
+  "hand_wipes",
+  "surface_wipes",
+];
+const items = Array.isArray(payload?.items) ? payload.items : [];
+const qtyMap = Object.fromEntries(items.map(it => [it.id, Number(it.qty || 0)]));
+const metaMap = Object.fromEntries(items.map(it => [it.id, String(it.meta || "")]));
+
+// X-Positionen (Zentren) der 3 Kästchen-Spalten in PDF-Punkten (pdf-lib Koordinaten)
+const PG54_X = [429.75, 445.25, 461.0];
+// Y-Positionen (Zentren) je Zeile 1..12 (von oben nach unten)
+const PG54_Y = [546.75, 512.5, 477.5, 450.0, 425.0, 398.0, 371.5, 345.0, 318.5, 292.5, 266.0, 249.25];
+
+for(let i=0;i<pg54Order.length;i++){
+  const id = pg54Order[i];
+  let val = qtyMap[id] || 0;
+
+  // Desinfektionsmittel: Faktor = Anzahl * (ml/100) gerundet (Formularlogik)
+  if(id === "handdes" || id === "surfacedes"){
+    const ml = parseMl(metaMap[id] || "");
+    const factor = factorForMl(ml || 500);
+    val = val ? (val * factor) : 0;
+  }
+
+  // Nur schreiben, wenn etwas gewählt wurde
+  if(val > 0){
+    drawPg54Boxes(kPage, String(val), PG54_X, PG54_Y[i], { size: 11 });
+  }
+}
+
     // Datum unten links (TTMMJJJJ)
     const today = new Date();
     const dd = String(today.getDate()).padStart(2,'0');
@@ -1637,6 +1752,38 @@
     return new Blob([pdfBytes], { type: 'application/pdf' });
   }
 
+
+  async function renderPdfJs(blob){
+    const viewer = document.getElementById('pdfJsViewer');
+    if(!viewer || !window.pdfjsLib) return;
+
+    viewer.innerHTML = '';
+    const ab = await blob.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+
+    for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
+      const page = await pdf.getPage(pageNum);
+      const viewport1 = page.getViewport({ scale: 1 });
+      const maxWidth = Math.max(320, viewer.clientWidth - 24);
+      const scale = maxWidth / viewport1.width;
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { alpha: false });
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      canvas.style.width = '100%';
+      canvas.style.height = 'auto';
+      canvas.style.display = 'block';
+      canvas.style.margin = '0 0 12px';
+      canvas.style.border = '1px solid #eef0f6';
+      canvas.style.borderRadius = '10px';
+
+      viewer.appendChild(canvas);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+    }
+  }
+
   async function renderFilledPdfPreview(payload){
     if(__pdfBusy) return;
     __pdfBusy = true;
@@ -1666,10 +1813,8 @@
         openLink.style.display = 'inline-block';
         openLink.href = url;
       }
-
-      // 3) Optional: iframe als Fallback (wenn Browser es kann)
-      const iframe = document.getElementById('pdfPreview');
-      if(iframe) iframe.src = url;
+      // 3) PDF.js Vorschau (funktioniert auch auf iPhone/iPad)
+      await renderPdfJs(blob);
 
       if(status) status.textContent = 'PDF wurde erstellt. Öffne sie im neuen Tab (Button „PDF öffnen“).';
     }catch(err){
