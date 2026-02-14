@@ -343,7 +343,7 @@
           <div class="nav">
             <div class="left"></div>
             <div class="right">
-              <button class="primary" id="next1" type="button" disabled>Bestellung zu Lieferinformationen</button>
+              <button class="primary" id="next1" type="button" disabled>Weiter zu Lieferinformationen</button>
             </div>
           </div>
         </div>
@@ -448,7 +448,7 @@
               <button class="secondary" id="back2" type="button">Zurück</button>
             </div>
             <div class="right">
-              <button class="primary" id="next2" type="button">Bestellung zu Versicherungsdaten</button>
+              <button class="primary" id="next2" type="button">Weiter zu Versicherungsdaten</button>
             </div>
           </div>
         </div>
@@ -594,7 +594,7 @@
               <button class="secondary" id="back3" type="button">Zurück</button>
             </div>
             <div class="right">
-              <button class="primary" id="next3" type="button">Bestellung zur Übersicht</button>
+              <button class="primary" id="next3" type="button">Weiter zur Übersicht</button>
             </div>
           </div>
         </div>
@@ -602,35 +602,39 @@
 <!-- Step 4 -->
 
 
-                <div class="step" id="step4" style="display:none;">
-          <h2>Schritt 4: Abschluss</h2>
-          <p style="margin:0 0 12px; color:#475467; font-size:13px; line-height:1.5;">
-            Fertig! Wenn du auf <strong>„Bestellung erstellen“</strong> klickst, wird das Formular als PDF erzeugt und in einem neuen Tab geöffnet.
+        <div class="step" id="step4" style="display:none;">
+          <h2>Schritt 4: Formular (automatisch ausgefüllt)</h2>
+          <p style="margin:0 0 10px; color:#475467; font-size:13px; line-height:1.5;">
+            Unten siehst du das ausgefüllte Original‑Formular (Anlage 2). Du kannst es direkt als PDF speichern.
           </p>
 
           <div class="nav" style="margin-top:0;">
             <div class="left">
               <button class="secondary" id="back4" type="button">Zurück</button>
+              <button class="danger" id="btnReset" type="button">Zurücksetzen</button>
             </div>
             <div class="right">
+              <button class="secondary" id="btnCopy" type="button">JSON kopieren</button>
+              <button class="secondary" id="btnPrint" type="button">Als PDF speichern / Drucken</button>
+              <button class="secondary" id="btnOpenPdf" type="button" disabled>PDF öffnen</button>
               <button class="primary" id="btnCreate" type="button">Bestellung erstellen</button>
             </div>
           </div>
 
-          <div id="pdfStatus" class="muted" style="margin:12px 0 0;"></div>
-
-          <!-- Hidden technical/legacy elements (kept for compatibility, not shown) -->
-          <div style="display:none;">
-            <button class="danger" id="btnReset" type="button">Zurücksetzen</button>
-            <button class="secondary" id="btnCopy" type="button">JSON kopieren</button>
-            <button class="secondary" id="btnPrint" type="button">Als PDF speichern / Drucken</button>
-            <button class="secondary" id="btnOpenPdf" type="button" disabled>PDF öffnen</button>
-            <div id="printArea" style="margin-top:12px;">
-              <a id="pdfOpenLink" href="#" target="_blank" rel="noopener">PDF in neuem Tab öffnen</a>
-              <iframe id="pdfPreview" title="PDF Vorschau"></iframe>
-            </div>
-            <pre id="output">{}</pre>
+          <!-- PDF PREVIEW AREA -->
+          <div id="printArea" style="margin-top:12px;">
+            <div id="pdfStatus" class="muted" style="margin:0 0 8px;"></div>
+            <a id="pdfOpenLink" href="#" target="_blank" rel="noopener" style="display:none; font-size:14px; margin:0 0 10px; display:inline-block;">PDF in neuem Tab öffnen</a>
+            <iframe id="pdfPreview" title="PDF Vorschau" style="width:100%; height:80vh; border:1px solid var(--line); border-radius:12px; background:#fff;"></iframe>
           </div>
+
+          <details style="margin-top:12px;">
+            <summary style="cursor:pointer; font-weight:800;">Technische Daten (JSON)</summary>
+            <div class="summary" style="margin-top:10px;">
+              <pre id="output">{}</pre>
+              <div class="muted">Tipp: Mit „JSON kopieren“ kannst du es direkt in WhatsApp/Email/Backend einfügen.</div>
+            </div>
+          </details>
         </div>
 
       </section>
@@ -1596,7 +1600,34 @@
     }
   }
 
-  async function generateFilledPdf(payload){
+  
+async function blobToBase64(blob){
+  const ab = await blob.arrayBuffer();
+  const bytes = new Uint8Array(ab);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for(let i=0;i<bytes.length;i+=chunkSize){
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function finalizeOnServer(originalBlob, filename){
+  const pdfBase64 = await blobToBase64(originalBlob);
+  const resp = await fetch('/api/finalize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pdfBase64, filename })
+  });
+  if(!resp.ok){
+    const t = await resp.text();
+    throw new Error('Finalize-API Fehler: ' + t);
+  }
+  const outBuf = await resp.arrayBuffer();
+  return new Blob([outBuf], { type: 'application/pdf' });
+}
+
+async function generateFilledPdf(payload){
     // pdf-lib kommt über CDN
     const { PDFDocument, StandardFonts } = window.PDFLib || {};
     if(!PDFDocument) throw new Error('PDFLib nicht verfügbar (CDN nicht geladen).');
@@ -1694,26 +1725,24 @@
       if(status) status.textContent = 'PDF wird erzeugt …';
       clearPdfPreview();
 
-      const blob = await generateFilledPdf(payload);
-      const url = URL.createObjectURL(blob);
-      __pdfPreviewUrl = url;
+      
+const rawBlob = await generateFilledPdf(payload);
 
-      // 1) Immer in neuem Tab öffnen (Android/iOS stabil)
-      try{ window.open(url, '_blank'); }catch(e){}
+// Server-Finalisierung: Read-only + Flatten (Vercel Function)
+const safeName = (payload?.customer?.nachname || 'Kunde').replace(/[^a-zA-Z0-9_-]/g,'_');
+const safeVor = (payload?.customer?.vorname || '').replace(/[^a-zA-Z0-9_-]/g,'_');
+const fileName = `Pflegebox_${safeName}${safeVor?('_'+safeVor):''}_FINAL.pdf`;
 
-      // 2) Button + Link aktivieren (für später erneut öffnen)
-      if(btnOpen){
-        btnOpen.disabled = false;
-        btnOpen.onclick = () => {
-          if(__pdfPreviewUrl) window.open(__pdfPreviewUrl, '_blank');
-        };
-      }
-      if(openLink){
-        openLink.style.display = 'inline-block';
-        openLink.href = url;
-      }
+const blob = await finalizeOnServer(rawBlob, fileName);
 
-      // 3) Optional: iframe als Fallback (wenn Browser es kann)
+const url = URL.createObjectURL(blob);
+__pdfPreviewUrl = url;
+
+// 1) In neuem Tab öffnen
+try{ window.open(url, '_blank'); }catch(e){}
+
+// 2) Button + Link aktivieren (für später erneut öffnen)
+// 3) Optional: iframe als Fallback (wenn Browser es kann)
       const iframe = document.getElementById('pdfPreview');
       if(iframe) iframe.src = url;
 
@@ -1820,7 +1849,7 @@
   });
   kkNameInput?.addEventListener('input', () => { if(currentStep === 3) buildOutput(false); });
 
-  // Step 1: Ohne Pflegegrad kein Bestellung
+  // Step 1: Ohne Pflegegrad kein Weiter
 
   const next1 = document.getElementById("next1");
   const pgSelect = document.getElementById("pflegegrad");
