@@ -1600,34 +1600,7 @@
     }
   }
 
-  
-async function blobToBase64(blob){
-  const ab = await blob.arrayBuffer();
-  const bytes = new Uint8Array(ab);
-  let binary = '';
-  const chunkSize = 0x8000;
-  for(let i=0;i<bytes.length;i+=chunkSize){
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunkSize));
-  }
-  return btoa(binary);
-}
-
-async function finalizeOnServer(originalBlob, filename){
-  const pdfBase64 = await blobToBase64(originalBlob);
-  const resp = await fetch('/api/finalize', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pdfBase64, filename })
-  });
-  if(!resp.ok){
-    const t = await resp.text();
-    throw new Error('Finalize-API Fehler: ' + t);
-  }
-  const outBuf = await resp.arrayBuffer();
-  return new Blob([outBuf], { type: 'application/pdf' });
-}
-
-async function generateFilledPdf(payload){
+  async function generateFilledPdf(payload){
     // pdf-lib kommt über CDN
     const { PDFDocument, StandardFonts } = window.PDFLib || {};
     if(!PDFDocument) throw new Error('PDFLib nicht verfügbar (CDN nicht geladen).');
@@ -1725,24 +1698,26 @@ async function generateFilledPdf(payload){
       if(status) status.textContent = 'PDF wird erzeugt …';
       clearPdfPreview();
 
-      
-const rawBlob = await generateFilledPdf(payload);
+      const blob = await generateFilledPdf(payload);
+      const url = URL.createObjectURL(blob);
+      __pdfPreviewUrl = url;
 
-// Server-Finalisierung: Read-only + Flatten (Vercel Function)
-const safeName = (payload?.customer?.nachname || 'Kunde').replace(/[^a-zA-Z0-9_-]/g,'_');
-const safeVor = (payload?.customer?.vorname || '').replace(/[^a-zA-Z0-9_-]/g,'_');
-const fileName = `Pflegebox_${safeName}${safeVor?('_'+safeVor):''}_FINAL.pdf`;
+      // 1) Immer in neuem Tab öffnen (Android/iOS stabil)
+      try{ window.open(url, '_blank'); }catch(e){}
 
-const blob = await finalizeOnServer(rawBlob, fileName);
+      // 2) Button + Link aktivieren (für später erneut öffnen)
+      if(btnOpen){
+        btnOpen.disabled = false;
+        btnOpen.onclick = () => {
+          if(__pdfPreviewUrl) window.open(__pdfPreviewUrl, '_blank');
+        };
+      }
+      if(openLink){
+        openLink.style.display = 'inline-block';
+        openLink.href = url;
+      }
 
-const url = URL.createObjectURL(blob);
-__pdfPreviewUrl = url;
-
-// 1) In neuem Tab öffnen
-try{ window.open(url, '_blank'); }catch(e){}
-
-// 2) Button + Link aktivieren (für später erneut öffnen)
-// 3) Optional: iframe als Fallback (wenn Browser es kann)
+      // 3) Optional: iframe als Fallback (wenn Browser es kann)
       const iframe = document.getElementById('pdfPreview');
       if(iframe) iframe.src = url;
 
